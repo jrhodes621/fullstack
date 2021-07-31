@@ -1,4 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { makeStyles } from '@material-ui/core/styles';
+import Autocomplete from '@material-ui/lab/Autocomplete';
+import TextField from '@material-ui/core/TextField';
+import Typography from '@material-ui/core/Typography';
+import FormControl from '@material-ui/core/FormControl';
+import fetch from 'cross-fetch';
 
 const locations = [
   {
@@ -22,27 +28,59 @@ const locations = [
     latitude: 30.266666,
   },
 ];
-
+const useStyles = makeStyles((theme) => ({
+    formControl: {
+        margin: theme.spacing(1),
+        minWidth: 120,
+    },
+    selectEmpty: {
+        marginTop: theme.spacing(2),
+    },
+}));
 function App() {
+  const classes = useStyles();
+
+  const [weather, setWeather] = useState(null);
+  const [location, setLocation] = useState(null);
+
+  const onChangeLocation = async(event, value) => {
+      if(!value) {
+          return
+      }
+      setLocation(value);
+      try {
+          const response = await fetch(`http://localhost:3000?lat=${value.latitude}&long=${value.longitude}`);
+          if(response.status >= 400) {
+              return
+          }
+          const weather = await response.json();
+          setWeather(weather);
+      } catch(err) {
+          console.log(err)
+      }
+  };
   return (
     <div>
       <h1>Welcome to Warmly</h1>
       <h2>Autocomplete dropdown examples</h2>
-      <img
-        alt="page"
-        width="600"
-        src="https://i.ibb.co/d2Jddbj/Screen-Shot-2020-11-17-at-10-03-47-PM.png"
-      />
-      <img
-        alt="example"
-        width="300"
-        src="https://i.ibb.co/VqM30gg/Screen-Shot-2020-11-17-at-9-53-55-PM.png"
-      />
-      <img
-        alt="example"
-        width="300"
-        src="https://i.ibb.co/yg139ZQ/Screen-Shot-2020-11-17-at-9-53-42-PM.png"
-      />
+        <FormControl className={classes.formControl}>
+            <Autocomplete
+                id="combo-box-demo"
+                options={locations}
+                getOptionLabel={option => option.name}
+                style={{ width: 300 }}
+                renderInput={params => (
+                    <TextField {...params} label="City" variant="outlined" fullWidth />
+                )}
+                onChange={onChangeLocation}
+            />
+        </FormControl>
+        {location && <div>
+            Weather for <Typography variant={"h6"}>{location.name}</Typography>
+        </div>}
+        {weather && <div>
+            <Typography variant={"h6"}>{weather.description}</Typography>
+        </div>}
     </div>
   );
 }
